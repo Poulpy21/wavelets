@@ -58,26 +58,33 @@ def generateScalingFunction(m,levels):
 
     return phi[levels%2]
 
-def generateWavelet(j,k,maxLevels,interval):
+def generateWavelet(j,k,pmax,maxLevels,interval,boundaryMode='truncate'):
 
   if not hasattr(generateWavelet, "scalingFuncs"):
      generateWavelet.scalingFuncs = []
     
-  jfunc = 1
-
-  m = jfunc+1
+  if(boundaryMode == 'truncate'):
+      p = pmax
+      colorId = j
+  elif(boundaryMode == 'adapt'):
+      p = pmax
+      while k > 2**j - 2*p + 1 or k < 2*p - 1:
+          p -= 1
+          if(p==1): break
+      colorId = p
+  else:
+      p = max(0,min(j,pmax))
 
   #generate scaling functions at maximum accuracy level (for j = 0)
-  for i in range(len(generateWavelet.scalingFuncs)+1, m+1):
+  for i in range(len(generateWavelet.scalingFuncs)+1, p+2):
      print "generating scaling func " + str(i) + " !"
      generateWavelet.scalingFuncs.append(generateScalingFunction(i,maxLevels))
 
   #subsample the good scaling function to build the targetted wavelet
-  funcLength= generateWavelet.scalingFuncs[jfunc].size
+  funcLength= generateWavelet.scalingFuncs[p-1].size
   intLength= 2**(maxLevels)*(interval[1] - interval[0])+1
 
-  offset = 2**(maxLevels-j)*k
-  intOffset = - interval[0]*2**maxLevels
+  offset = 2**(maxLevels-j)*k 
 
   phi = np.zeros(shape=(intLength),dtype=float)
 
@@ -87,30 +94,34 @@ def generateWavelet(j,k,maxLevels,interval):
       if ip < 0 or ip >= intLength: 
           continue
       
-      iw = 2**(j+1)*(i-offset) + 2**(maxLevels)*(2*jfunc+1)
+      iw = 2**(j+1)*(i-offset) + 2**(maxLevels)*(2*p-1)
       if iw < 0 or iw >= funcLength:
           continue
 
-      phi[ip] = generateWavelet.scalingFuncs[jfunc][iw]
+      phi[ip] = generateWavelet.scalingFuncs[p-1][iw]
 
-  return phi 
+  return [phi,colorId]
       
 
 plt.title("Centered scaling functions")
 
-jmax = 2; 
-maxLevels = 8;
+jmax = 4; 
+pmax = 5;
+
+maxLevels = 10;
 interval = [0,1]
 colors = ['b','g','r','c','m','y','k']
 
-pmax = jmax+1;
 nPoints = 2**(maxLevels)*(interval[1]-interval[0]) + 1
 x=np.linspace(interval[0],interval[1],nPoints)
 
 for j in range(0,jmax+1):
     for k in range(0,2**j+1):
         if j==0 or (j>0 and k%2==1):
-            plt.plot(x, generateWavelet(j,k,maxLevels,interval),color=colors[j])
+            W = generateWavelet(j,k,pmax,maxLevels,interval,boundaryMode='adapt')
+            if(j==jmax):
+                plt.plot(x, W[0],color=colors[W[1]%len(colors)])
+
 
 plt.show()
 
