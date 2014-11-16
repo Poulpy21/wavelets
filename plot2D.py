@@ -1,5 +1,5 @@
-
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import operator as op
 
@@ -101,40 +101,45 @@ def generateWavelet(j,k,pmax,maxLevels,interval,boundaryMode='truncate'):
       phi[ip] = generateWavelet.scalingFuncs[p-1][iw]
 
   return [phi,colorId]
-      
 
-plt.title("Centered scaling functions")
 
 jmax = 4; 
-pmax = 5;
+pmax = 4;
 
-maxLevels = 10;
-interval = [0,1]
+maxLevels = 4;
+interval = [-2*pmax+1,2*pmax-1]
 colors = ['b','g','r','c','m','y','k']
+
+
+#for j in range(0,jmax+1):
+    #for k in range(0,2**j+1):
+        #if j==0 or (j>0 and k%2==1):
+            #W = generateWavelet(j,k,pmax,maxLevels,interval,boundaryMode='adapt')
+            #if(j==jmax):
+                #plt.plot(x, W[0],color=colors[W[1]%len(colors)])
+
 
 nPoints = 2**(maxLevels)*(interval[1]-interval[0]) + 1
 x=np.linspace(interval[0],interval[1],nPoints)
 
-for j in range(0,jmax+1):
-    for k in range(0,2**j+1):
-        if j==0 or (j>0 and k%2==1):
-            W = generateWavelet(j,k,pmax,maxLevels,interval,boundaryMode='adapt')
-            if(j==jmax):
-                plt.plot(x, W[0],color=colors[W[1]%len(colors)])
+W = generateScalingFunction(pmax,maxLevels)
 
+X,Y = np.meshgrid(x, x)
+I = range(0,len(W))
+Z = [[W[i]*x for x in [W[j] for j in I]] for i in I]
 
-plt.show()
+fig = plt.figure(figsize=(14,10))
+ax = fig.add_subplot(1, 1, 1, projection='3d')
+ax.plot_surface(X, Y, Z, rstride=4, cstride=4, alpha=0.99,cmap=plt.cm.coolwarm,linewidth=0)
+#p = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, linewidth=0, cmap=plt.cem.coolwarm)
+cset = ax.contour(X, Y, Z, zdir='z', offset=-1, cmap=plt.cm.coolwarm,stride=0.1)
+cset = ax.contour(X, Y, Z, zdir='x', offset=-2*pmax, cmap=plt.cm.coolwarm,stride=0.05)
+cset = ax.contour(X, Y, Z, zdir='y', offset=+2*pmax, cmap=plt.cm.coolwarm,stride=0.05)
+ax.set_xlim3d(-2*pmax, 2*pmax);
+ax.set_ylim3d(-2*pmax, 2*pmax);
+ax.set_zlim3d(-1, 1);
+#fig.colorbar(p, shrink=0.5)
 
-#jmax = 0; 
-#levels = 1;
-
-#pmax = jmax+1;
-#interval = [-2*pmax+1,2*pmax-1]
-
-#nPoints = 2**(levels)*(interval[1]-interval[0]) + 1
-
-#x=np.linspace(interval[0],interval[1],nPoints)
-#plt.plot(x, generateScalingFunction(pmax,levels),marker='x')
 
 plt.show()
 
